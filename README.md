@@ -136,27 +136,52 @@ curl 'http://127.0.0.1:8088/smsf_bridge.php?act=ping'
 # {"code":0,"msg":"pong","go_server":"http://127.0.0.1:8098","devices":["phone-01"],...}
 ```
 
-### 4. 配置 SmsForwarder（每部手机一条规则）
+### 4. 配置 SmsForwarder（安卓端，每部手机一份）
 
-在手机端 SmsForwarder 里：
+> 动手机前先把两个值拿到手：① Go 管理端建好这台手机的设备，拿到 `device_no`（如 `phone-01`）和 `secret`；
+> ② 在 `smsf_devices.json` 里给这台手机加一条，生成一个随机 `token`。**手机端只需要 `device_no` 和 `token`**
+> （`secret` 由桥接用，不进手机）。完整图文流程见 [`docs/android-smsforwarder-setup.md`](docs/android-smsforwarder-setup.md)。
 
-- **设备标识**：填该手机的 `device_no`（如 `phone-01`）。
-- **通用接口 → 请求体模板**：
+**(1) 安装与权限**
+- 从 [SmsForwarder releases](https://github.com/pppscn/SmsForwarder/releases) 装 apk，无需 root。
+- `设置` → 打开 `启用转发`，再进 `通知使用权` 把 SmsForwarder 的开关打开（**这步没开什么都收不到**）。
+- 把 App 加进电池优化/自启动/后台运行白名单，否则国产 ROM 锁屏会杀后台丢通知。
+
+**(2) 设置设备标识**
+- `设置` → `设备标识` / `device_mark`，填该手机的 `device_no`（如 `phone-01`），大小写横杠严格一致。
+
+**(3) 新建转发规则**（`转发` → `+`）
+
+| 字段 | 值 |
+|------|-----|
+| 转发类型 | 通用接口 / WebHook |
+| 请求方式 | `POST` |
+| 内容类型 | `application/json` |
+| 目标地址 | `http://<桥接服务器IP>:8088/smsf_bridge.php?device_no=phone-01` |
+| 请求体 | 见下方模板 |
+
+请求体模板（`[xxx]` 是 SmsForwarder 内置占位符会自动替换；`token` 是写死的串，换成该手机在 `smsf_devices.json` 里的 token）：
 
 ```json
 {"device_mark":"[device_mark]","token":"本机桥接token","title":"[title]","msg":"[msg]",
  "receive_time":"[receive_time]","timestamp":"[timestamp]","package_name":"[package_name]"}
 ```
 
-把 `token` 写成该手机在 `smsf_devices.json` 里对应的桥接 token。请求地址指向 PHP 桥接：
+**(4) 匹配条件**（只转收款通知，避免把所有微信通知都发出去）
 
-```
-http://你的服务器:8088/smsf_bridge.php?device_no=phone-01
-```
+- 微信：包名 = `com.tencent.mm`，且内容包含 `微信支付收款` 或 `微信收款助手`
+- 支付宝（可选）：包名 = `com.eg.android.alipaygphone`，且内容包含 `收款` 或 `到账`
 
-> `[device_mark]`、`[title]`、`[msg]` 等是 SmsForwarder 的内置占位符，会自动替换成实际通知内容。
+桥接按 `package_name` 自动推断渠道（`com.tencent.mm`→wxpay、`com.eg.android.alipaygphone`→alipay），无需手填；Go 端从 `标题+内容` 解析金额，无需单独带金额字段。
 
-桥接会按 `package_name` 自动推断渠道（`com.tencent.mm`→wxpay、`com.*.alipay`→alipay），无需手填。
+**(5) 手机端自测**
+- 规则里的「测试」按钮，或让人给你微信发 0.01 元收款触发。
+- 正常返回 `{"code":0,"match_status":"pending","msg":"ok",...}`。
+- `403 设备未找到/token 校验失败` → 核对 `device_no` 拼写和 `token` 是否与 `smsf_devices.json` 一致；
+  连接超时 → 桥接没跑或端口不通；日志无记录 → 通知使用权没开或后台被杀。
+
+**(6) 多手机**：每部都走一遍 (1)~(5)，`device_no`、`token` 各用各的，别串号。某部下线只需在 Go 管理端
+把对应账号 `status` 设为停用，不动手机。
 
 ### 5. 端到端验证
 
@@ -296,6 +321,7 @@ php -l bridge/notifyledger_internal.php
 
 ## 文档
 
+- [`docs/android-smsforwarder-setup.md`](docs/android-smsforwarder-setup.md) — **安卓端 SmsForwarder 配置流程**（装机、权限、转发规则、自测、多手机）
 - [`docs/smsforwarder-bridge.md`](docs/smsforwarder-bridge.md) — 桥接设计细节
 - [`docs/通知收款监听与Epay对接规划.md`](docs/通知收款监听与Epay对接规划.md) — 整体方案与对接规划
 - [`docs/微信多账号管理与对外API方案.md`](docs/微信多账号管理与对外API方案.md) — 多账号模型与对外 API
