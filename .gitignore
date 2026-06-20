@@ -5,8 +5,10 @@ smsf_bridge.log
 *.log
 
 # ---- 编译产物 / 二进制 ----
-bufan-ledger
-bufan-ledger.exe
+# 只忽略仓库根目录的编译产物，不要写成裸 bufan-ledger，
+# 否则会连 cmd/bufan-ledger/ 源码目录一起忽略。
+/bufan-ledger
+/bufan-ledger.exe
 *.exe
 *.dll
 *.so
