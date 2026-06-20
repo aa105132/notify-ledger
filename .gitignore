@@ -1,0 +1,30 @@
+# ---- 密钥 / 敏感配置（绝不提交）----
+.env
+smsf_devices.json
+smsf_bridge.log
+*.log
+
+# ---- 编译产物 / 二进制 ----
+bufan-ledger
+bufan-ledger.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# ---- Go 工作目录 ----
+vendor/
+
+# ---- 本地工具链（便携 PHP 等，不应入库）----
+tools/
+
+# ---- 编辑器 / 系统 ----
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ---- 测试临时文件 ----
+_post_body.json
+__debug_bin*

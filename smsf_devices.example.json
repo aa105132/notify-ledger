@@ -1,0 +1,29 @@
+{
+  "_comment": "SmsForwarder -> Go 桥接配置示例。复制为 smsf_devices.json 后填入真实密钥/token。真实 smsf_devices.json 必须放在 EPay web 根目录之外，禁止放进 Epay/ 内，否则会被当静态文件下载泄露密钥。",
+
+  "_how_to_add_device": [
+    "1. 在 Go 收款管理端 /admin/devices 新建设备，记下 device_no 与生成的 secret（密钥只在创建时展示一次，也可在数据库 pre_nl_device 里查）。",
+    "2. 在 Go /admin/accounts 为该 device_no 新建一个 channel=wxpay 的微信账号。",
+    "3. 在下方 devices 里加一条：\"<device_no>\": { \"secret\": \"<Go 设备密钥>\", \"token\": \"<随机桥接 token>\" }。",
+    "4. 在该手机的 SmsForwarder 里：设备标识填 <device_no>，通用接口转发体里把 token 写成上面的桥接 token。"
+  ],
+
+  "_how_to_generate_token": "Linux/Mac: head -c 16 /dev/urandom | xxd -p  或  openssl rand -hex 16  ；Windows PowerShell: -join ((48..57)+(97..102) | Get-Random -Count 32 | % {[char]$_})",
+
+  "go_server_url": "http://127.0.0.1:8098",
+  "default_channel": "wxpay",
+  "allow_ips": [],
+  "log_file": "/var/log/smsf_bridge.log",
+
+  "devices": {
+    "phone-01": {
+      "_note": "secret 填 Go 管理端该设备的密钥；token 填一个随机串，必须与该手机 SmsForwarder 转发体里的 token 完全一致。",
+      "secret": "REPLACE_WITH_GO_DEVICE_SECRET",
+      "token": "REPLACE_WITH_RANDOM_BRIDGE_TOKEN"
+    },
+    "phone-02": {
+      "secret": "REPLACE_WITH_GO_DEVICE_SECRET",
+      "token": "REPLACE_WITH_RANDOM_BRIDGE_TOKEN"
+    }
+  }
+}

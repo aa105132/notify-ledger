@@ -1,0 +1,21 @@
+[Unit]
+Description=Bufan Notify Ledger Server
+After=network.target mysql.service mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/bufan-ledger
+EnvironmentFile=/opt/bufan-ledger/.env
+ExecStart=/opt/bufan-ledger/bufan-ledger
+Restart=always
+RestartSec=3
+User=www-data
+Group=www-data
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
